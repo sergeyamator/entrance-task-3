@@ -55,9 +55,9 @@
    skipWaiting - Делает активный сервис воркер который находился в стадии ожидания.
      
    * Вопрос №2: зачем нужен этот вызов? 
-     >  deleteObsoleteCaches()
-               .then(() => { 
-                self.clients.claim(); 
+   >  deleteObsoleteCaches()
+             .then(() => { 
+              self.clients.claim(); 
                 
    Данный вызов удаляет неактуальный кеш. Это очень хорошо что происходит
    в данном обработчике события, так как он идеально подходит для этого.
@@ -97,8 +97,8 @@
   случае это версия кеша ), поэтому и promise
   
   * Нужно ли при скачивании сохранять ресурс для оффлайна?
-    > function needStoreForOffline(cacheKey) {
-        return cacheKey.includes('vendor/') ||
+  > function needStoreForOffline(cacheKey) {
+      return cacheKey.includes('vendor/') ||
     
   Да, нужно. Так как при оффлайне нам нужны все эти файлы
   для корректной работы сайта
