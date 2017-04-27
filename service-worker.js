@@ -6,12 +6,11 @@
 
 const CACHE_VERSION = '1.0.0-broken';
 
-importScripts('../vendor/kv-keeper.js-1.0.4/kv-keeper.js');
-
+importScripts('./vendor/kv-keeper.js-1.0.4/kv-keeper.js');
 
 self.addEventListener('install', event => {
     const promise = preCacheAllFavorites()
-        // Вопрос №1: зачем нужен этот вызов?
+        .then(() => preCacheAllFiles())
         .then(() => self.skipWaiting())
         .then(() => console.log('[ServiceWorker] Installed!'));
 
@@ -21,7 +20,15 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
     const promise = deleteObsoleteCaches()
         .then(() => {
-            // Вопрос №2: зачем нужен этот вызов?
+
+            // Ответ
+            /*
+
+             */
+
+            /*
+
+             */
             self.clients.claim();
 
             console.log('[ServiceWorker] Activated!');
@@ -32,14 +39,11 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
-
-    // Вопрос №3: для всех ли случаев подойдёт такое построение ключа?
     const cacheKey = url.origin + url.pathname;
 
     let response;
     if (needStoreForOffline(cacheKey)) {
-        response = caches.match(cacheKey)
-            .then(cacheResponse => cacheResponse || fetchAndPutToCache(cacheKey, event.request));
+        response = fetchAndPutToCache(cacheKey, event.request);
     } else {
         response = fetchWithFallbackToCache(event.request);
     }
@@ -52,7 +56,6 @@ self.addEventListener('message', event => {
 
     event.waitUntil(promise);
 });
-
 
 // Положить в новый кеш все добавленные в избранное картинки
 function preCacheAllFavorites() {
@@ -112,7 +115,6 @@ function getFavoriteById(id) {
 function deleteObsoleteCaches() {
     return caches.keys()
         .then(names => {
-            // Вопрос №4: зачем нужна эта цепочка вызовов?
             return Promise.all(
                 names.filter(name => name !== CACHE_VERSION)
                     .map(name => {
@@ -123,10 +125,15 @@ function deleteObsoleteCaches() {
         });
 }
 
-// Нужно ли при скачивании сохранять ресурс для оффлайна?
+
 function needStoreForOffline(cacheKey) {
     return cacheKey.includes('vendor/') ||
         cacheKey.includes('assets/') ||
+        cacheKey.includes('service-worker.js') ||
+        (/\.html/).test(cacheKey) ||
+        (/\.html/).test(cacheKey) ||
+        (/\.webp/).test(cacheKey) ||
+        (/api.giphy.com\/v1\/gifs\/search/).test(cacheKey) ||
         cacheKey.endsWith('jquery.min.js');
 }
 
@@ -136,7 +143,7 @@ function fetchAndPutToCache(cacheKey, request) {
         .then(response => {
             return caches.open(CACHE_VERSION)
                 .then(cache => {
-                    // Вопрос №5: для чего нужно клонирование?
+
                     cache.put(cacheKey, response.clone());
                 })
                 .then(() => response);
@@ -189,4 +196,22 @@ function handleFavoriteAdd(id, data) {
                     );
                 });
         });
+}
+
+// Положить в новый кеш все файлы
+function preCacheAllFiles() {
+    const files = [
+        "./assets/blocks.js",
+        "./assets/star.svg",
+        "./assets/style.css",
+        "./assets/templates.js",
+        "./vendor/bem-components-dist-5.0.0/touch-phone/bem-components.dev.css",
+        "./vendor/bem-components-dist-5.0.0/touch-phone/bem-components.dev.js",
+        "./vendor/kv-keeper.js-1.0.4/kv-keeper.js",
+        "./vendor/kv-keeper.js-1.0.4/kv-keeper.typedef.js",
+        "./gifs.html",
+        'https://yastatic.net/jquery/3.1.0/jquery.min.js'
+    ];
+    return caches.open(CACHE_VERSION)
+        .then(cache => cache.addAll(files));
 }
